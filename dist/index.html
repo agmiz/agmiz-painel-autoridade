@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Painel privado de execucao da estrategia de autoridade da AGMIZ.">
+  <title>AGMIZ | Painel de Autoridade</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="config.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="assets/logo-agmiz.png" alt="AGMIZ SEO e GEO">
+        <span>Painel de autoridade</span>
+      </div>
+
+      <nav class="nav" aria-label="Navegacao principal">
+        <button class="nav-item active" data-view="overview"><i data-lucide="layout-dashboard"></i><span>Visao geral</span></button>
+        <button class="nav-item" data-view="tasks"><i data-lucide="list-checks"></i><span>Checklist</span><b id="navPending">0</b></button>
+        <button class="nav-item" data-view="calendar"><i data-lucide="calendar-days"></i><span>Calendario</span></button>
+        <button class="nav-item" data-view="metrics"><i data-lucide="chart-no-axes-combined"></i><span>Metricas</span></button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="goal-copy"><span>Meta central</span><strong>Ser a resposta.</strong></div>
+        <button class="icon-button" id="exportButton" title="Exportar backup"><i data-lucide="download"></i></button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Plano de 90 dias</p>
+          <h1 id="viewTitle">Visao geral</h1>
+        </div>
+        <div class="top-actions">
+          <button class="cloud-status" id="cloudStatusButton" type="button" title="Configurar sincronizacao"><i data-lucide="cloud-off"></i><span id="cloudStatusText">Somente local</span></button>
+          <span class="period"><i data-lucide="calendar-range"></i> 05 Nov 2026 - 02 Fev 2027</span>
+          <button class="primary-button" id="addTaskButton"><i data-lucide="plus"></i> Nova tarefa</button>
+        </div>
+      </header>
+
+      <section class="view active" id="overviewView">
+        <div class="hero-band">
+          <div>
+            <span class="status-dot"><i></i> Execucao em andamento</span>
+            <h2>Agora sua marca pode ser<br><em>a resposta.</em></h2>
+            <p>Conteudo, pesquisa e distribuicao organizados para transformar Fernanda Alencar e AGMIZ em referencias de SEO e GEO.</p>
+          </div>
+          <div class="hero-progress">
+            <div class="progress-ring" id="progressRing"><strong id="progressPercent">0%</strong><span>concluido</span></div>
+            <p><b id="completedCount">0</b> de <b id="totalCount">0</b> tarefas</p>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <article class="stat-card"><span>Para hoje</span><strong id="todayCount">0</strong><small id="todayHint">Nenhuma pendencia</small></article>
+          <article class="stat-card"><span>Esta semana</span><strong id="weekCount">0</strong><small>tarefas com prazo</small></article>
+          <article class="stat-card"><span>Conteudos publicados</span><strong id="publishedCount">0</strong><small>em todos os canais</small></article>
+          <article class="stat-card accent"><span>Impressoes em IA</span><strong id="aiImpressionsCard">66</strong><small>linha de base: 3 meses</small></article>
+        </div>
+
+        <div class="overview-grid">
+          <section class="panel priority-panel">
+            <div class="panel-heading"><div><span class="kicker">Foco imediato</span><h3>Proximas entregas</h3></div><button class="text-button" data-go="tasks">Ver checklist <i data-lucide="arrow-right"></i></button></div>
+            <div id="priorityList" class="priority-list"></div>
+          </section>
+
+          <section class="panel channels-panel">
+            <div class="panel-heading"><div><span class="kicker">Distribuicao</span><h3>Progresso por canal</h3></div></div>
+            <div id="channelProgress" class="channel-progress"></div>
+          </section>
+        </div>
+
+        <section class="panel zenodo-callout">
+          <div class="callout-icon"><i data-lucide="book-open-check"></i></div>
+          <div><span class="kicker">Em andamento</span><h3>Cadastro no Zenodo</h3><p>Perfil pessoal de Fernanda Alencar, com afiliacao a AGMIZ. Depois, conectar ORCID e preparar a primeira pesquisa.</p></div>
+          <button class="secondary-button" id="advanceZenodo"><i data-lucide="check"></i> Marcar cadastro concluido</button>
+        </section>
+      </section>
+
+      <section class="view" id="tasksView">
+        <div class="toolbar panel">
+          <label class="search-box"><i data-lucide="search"></i><input id="taskSearch" type="search" placeholder="Buscar tarefa ou conteudo"></label>
+          <select id="channelFilter" aria-label="Filtrar por canal"><option value="all">Todos os canais</option></select>
+          <select id="monthFilter" aria-label="Filtrar por mes"><option value="all">Todos os meses</option><option value="2026-11">Novembro</option><option value="2026-12">Dezembro</option><option value="2027-01">Janeiro</option><option value="2027-02">Fechamento</option></select>
+          <select id="statusFilter" aria-label="Filtrar por status"><option value="all">Todos os status</option><option value="pending">Pendente</option><option value="progress">Em andamento</option><option value="done">Concluido</option></select>
+          <button class="icon-button" id="resetFilters" title="Limpar filtros"><i data-lucide="rotate-ccw"></i></button>
+        </div>
+        <div class="task-summary" id="taskSummary"></div>
+        <div class="task-list" id="taskList"></div>
+      </section>
+
+      <section class="view" id="calendarView">
+        <div class="calendar-header">
+          <div><p class="eyebrow">Agenda editorial</p><div class="calendar-title-row"><button class="icon-button" id="previousMonth" title="Mes anterior"><i data-lucide="chevron-left"></i></button><h2 id="calendarMonthTitle">Novembro de 2026</h2><button class="icon-button" id="nextMonth" title="Proximo mes"><i data-lucide="chevron-right"></i></button></div></div>
+          <div class="legend"><span><i class="dot orange"></i> Conteudo</span><span><i class="dot green"></i> Pesquisa</span><span><i class="dot blue"></i> Distribuicao</span></div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </section>
+
+      <section class="view" id="metricsView">
+        <div class="metrics-intro">
+          <div><p class="eyebrow">Medicao mensal</p><h2>Da publicacao ao contrato</h2><p>Atualize no primeiro dia util de cada mes. Os dados ficam salvos neste navegador.</p></div>
+          <button class="secondary-button" id="saveMetrics"><i data-lucide="save"></i> Salvar metricas</button>
+        </div>
+
+        <div class="metric-cards">
+          <article><span>Impressoes Google</span><input type="number" min="0" data-metric="googleImpressions" value="2310"><small>Linha de base: 6 meses</small></article>
+          <article><span>Cliques organicos</span><input type="number" min="0" data-metric="clicks" value="8"><small>Linha de base: 6 meses</small></article>
+          <article><span>Impressoes em IA</span><input type="number" min="0" data-metric="aiImpressions" value="66"><small>Linha de base: 3 meses</small></article>
+          <article><span>Mencoes em IA</span><input type="number" min="0" data-metric="aiMentions" value="0"><small>Prompts fixos monitorados</small></article>
+          <article><span>Visitas por UTM</span><input type="number" min="0" data-metric="utmVisits" value="0"><small>LinkedIn, YouTube, Zenodo e decks</small></article>
+          <article><span>Auditorias</span><input type="number" min="0" data-metric="audits" value="0"><small>Concluidas no periodo</small></article>
+          <article><span>Reunioes</span><input type="number" min="0" data-metric="meetings" value="0"><small>Originadas pelo conteudo</small></article>
+          <article><span>Contratos</span><input type="number" min="0" data-metric="contracts" value="0"><small>Receita atribuida</small></article>
+        </div>
+
+        <div class="panel measurement-panel">
+          <div class="panel-heading"><div><span class="kicker">Regras</span><h3>Como tomar decisoes</h3></div></div>
+          <div class="decision-grid">
+            <div><b>14 dias</b><p>Nao indexou? Revisar acesso, canonical, sitemap e qualidade.</p></div>
+            <div><b>45 dias</b><p>Indexou sem impressoes? Rever intencao, titulo e links internos.</p></div>
+            <div><b>Impressoes sem cliques</b><p>Melhorar titulo, promessa e descricao.</p></div>
+            <div><b>Cliques sem auditorias</b><p>Revisar CTA, oferta e continuidade da pagina.</p></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="taskDialog">
+    <form method="dialog" id="taskForm">
+      <div class="dialog-heading"><div><p class="eyebrow">Planejamento</p><h2>Nova tarefa</h2></div><button type="button" class="icon-button" id="closeDialog" title="Fechar"><i data-lucide="x"></i></button></div>
+      <label>Tarefa<input id="newTaskTitle" required maxlength="120" placeholder="Ex.: Publicar artigo sobre GEO"></label>
+      <div class="form-row"><label>Canal<select id="newTaskChannel"></select></label><label>Prazo<input id="newTaskDate" type="date" required></label></div>
+      <label>Observacao<textarea id="newTaskNote" rows="3" placeholder="Resultado esperado ou proximo passo"></textarea></label>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="cancelDialog">Cancelar</button><button class="primary-button" value="default"><i data-lucide="plus"></i> Adicionar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="cloudDialog">
+    <form method="dialog" id="cloudForm">
+      <div class="dialog-heading"><div><p class="eyebrow">Sincronizacao</p><h2>Conectar ao banco</h2></div><button type="button" class="icon-button" id="closeCloudDialog" title="Fechar"><i data-lucide="x"></i></button></div>
+      <p class="dialog-copy">Entre com a conta proprietaria do workspace para sincronizar o plano com o Supabase.</p>
+      <label>E-mail<input id="cloudEmail" type="email" autocomplete="username" required value="fernandaalencar.mkt@gmail.com"></label>
+      <label>Senha<input id="cloudPassword" type="password" autocomplete="current-password" required placeholder="Senha da conta"></label>
+      <p class="form-feedback" id="cloudFeedback"></p>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="disconnectCloud">Sair</button><button class="primary-button" id="connectCloudButton" value="default"><i data-lucide="log-in"></i> Entrar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="migrationDialog" class="migration-dialog">
+    <div class="migration-content">
+      <div class="dialog-heading"><div><p class="eyebrow">Migracao segura</p><h2>Conferir antes de importar</h2></div><button type="button" class="icon-button" id="closeMigrationDialog" title="Fechar"><i data-lucide="x"></i></button></div>
+      <div class="migration-stats" id="migrationStats"></div>
+      <p class="dialog-copy">As tarefas continuarao no localStorage ate a conferencia final. Artigos existentes sao comparados por titulo normalizado e semana.</p>
+      <div class="migration-examples"><h3>10 exemplos</h3><div id="migrationExamples"></div></div>
+      <p class="form-feedback" id="migrationFeedback"></p>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="cancelMigration">Agora nao</button><button type="button" class="primary-button" id="confirmMigration"><i data-lucide="database"></i> Importar para o Supabase</button></div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+</body>
+</html>
